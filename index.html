@@ -6,22 +6,22 @@
 <title>התחרות של אסתי ואמא</title>
 <style>
   :root {
-    /* watercolor palette: turquoise <-> orange, with the sage 50/50 mix between them */
-    --bg: #f4f1ea;
-    --card: #fdfcf8;
-    --card2: #f1ede2;
-    --text: #3d3931;
-    --muted: #8d857a;
-    --green: #8fa963;   /* sage - the 50/50 mix */
-    --red: #c96f4a;     /* terracotta */
-    --gold: #c0913c;    /* ochre - the 75% orange mix */
-    --blue: #63aeb2;    /* turquoise */
-    --pink: #dd9a5f;    /* orange */
+    /* watercolor palette: mint & light-blue */
+    --bg: #eff5f3;
+    --card: #fcfefd;
+    --card2: #edf3f1;
+    --text: #2f3e3c;
+    --muted: #7a8b88;
+    --green: #6cab8d;   /* mint-green - success */
+    --red: #c97a5e;     /* soft coral - failure */
+    --gold: #46a0ab;    /* teal-tchelet - points & accents */
+    --blue: #85c7a6;    /* mint - Mom */
+    --pink: #72bfd1;    /* light blue - Esti */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'Segoe UI', system-ui, sans-serif;
-    background: linear-gradient(160deg, #f7f4ed 0%, #ece6d8 100%);
+    background: linear-gradient(160deg, #f2f7f5 0%, #e0ece8 100%);
     color: var(--text);
     min-height: 100vh;
     padding: 20px 12px 60px;
@@ -30,7 +30,7 @@
   h1 { text-align: center; font-size: 1.8rem; margin-bottom: 4px; }
   .day-counter { text-align: center; color: var(--muted); font-size: 0.95rem; margin-bottom: 4px; }
   .sync-status { text-align: center; font-size: 0.8rem; margin-bottom: 16px; min-height: 1.2em; }
-  .sync-status.ok { color: #6d8a4e; }
+  .sync-status.ok { color: #4e8a6d; }
   .sync-status.err { color: var(--gold); }
   .sync-status.loading { color: var(--muted); }
 
@@ -39,8 +39,8 @@
     border-radius: 16px;
     padding: 20px;
     margin-bottom: 16px;
-    box-shadow: 0 3px 14px rgba(93,82,60,0.12);
-    border: 1px solid #eae4d6;
+    box-shadow: 0 3px 14px rgba(58,92,82,0.10);
+    border: 1px solid #e0ebe7;
   }
 
   button {
@@ -50,15 +50,15 @@
   }
   button:hover { filter: brightness(1.15); }
   button:active { transform: scale(0.97); }
-  .btn-success { background: var(--green); color: #2c3517; }
+  .btn-success { background: var(--green); color: #16352a; }
   .btn-fail { background: var(--red); color: #fff; }
-  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid #d8d1c0; padding: 12px; width: 100%; margin-top: 4px; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid #c9dad4; padding: 12px; width: 100%; margin-top: 4px; }
 
   /* ---- score banner ---- */
   .score-banner {
     text-align: center; padding: 20px; border-radius: 16px; margin-bottom: 16px;
-    background: linear-gradient(90deg, rgba(192,145,60,0.16), rgba(192,145,60,0.05));
-    border: 1px solid rgba(192,145,60,0.4);
+    background: linear-gradient(90deg, rgba(70,160,171,0.14), rgba(70,160,171,0.04));
+    border: 1px solid rgba(70,160,171,0.38);
   }
   .score-banner .label { color: var(--muted); font-size: 1rem; }
   .score-banner .points { font-size: 3.2rem; font-weight: 800; color: var(--gold); line-height: 1.15; }
@@ -68,10 +68,10 @@
   /* ---- daily verdict ---- */
   .verdict {
     text-align: center; padding: 14px 16px; border-radius: 14px; margin-bottom: 16px;
-    font-size: 1.08rem; border: 1px solid #ddd6c5; background: rgba(141,133,122,0.07);
+    font-size: 1.08rem; border: 1px solid #d5e2dd; background: rgba(122,139,136,0.07);
   }
-  .verdict.plus { border-color: rgba(143,169,99,0.55); background: rgba(143,169,99,0.14); }
-  .verdict.minus { border-color: rgba(201,111,74,0.5); background: rgba(201,111,74,0.12); }
+  .verdict.plus { border-color: rgba(108,171,141,0.55); background: rgba(108,171,141,0.13); }
+  .verdict.minus { border-color: rgba(201,122,94,0.5); background: rgba(201,122,94,0.11); }
   .verdict .pts { font-weight: 800; }
 
   /* ---- players ---- */
@@ -92,7 +92,7 @@
   /* ---- rules ---- */
   h2 { font-size: 1.1rem; margin-bottom: 12px; }
   .rules-list { list-style: none; font-size: 0.95rem; }
-  .rules-list li { padding: 7px 0; border-bottom: 1px solid #ece6d7; display: flex; justify-content: space-between; gap: 10px; }
+  .rules-list li { padding: 7px 0; border-bottom: 1px solid #e4ede9; display: flex; justify-content: space-between; gap: 10px; }
   .rules-list li:last-child { border-bottom: none; }
   .rules-list .pts-badge { font-weight: 800; white-space: nowrap; }
   .pts-badge.plus { color: var(--green); }
@@ -101,13 +101,13 @@
 
   /* ---- history ---- */
   table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
-  th { color: var(--muted); font-weight: 600; padding: 8px 6px; text-align: center; border-bottom: 1px solid #ddd6c5; }
+  th { color: var(--muted); font-weight: 600; padding: 8px 6px; text-align: center; border-bottom: 1px solid #cfdfda; }
   th:first-child { text-align: right; }
-  td { padding: 9px 6px; text-align: center; border-bottom: 1px solid #ece6d7; }
+  td { padding: 9px 6px; text-align: center; border-bottom: 1px solid #e4ede9; }
   td:first-child { text-align: right; color: var(--muted); white-space: nowrap; }
   .mark-ok { color: var(--green); font-weight: 700; }
   .mark-no { color: var(--red); font-weight: 700; }
-  .mark-none { color: #c6bda9; }
+  .mark-none { color: #b9ccc6; }
   .day-pts-plus { color: var(--green); font-weight: 700; }
   .day-pts-minus { color: var(--red); font-weight: 700; }
   .day-pts-zero { color: var(--muted); }
@@ -420,7 +420,7 @@ function renderHistory() {
 
 /* ---------- confetti ---------- */
 function launchConfetti(count) {
-  const colors = ['#c0913c','#63aeb2','#dd9a5f','#8fa963','#9fc4b8'];
+  const colors = ['#46a0ab','#72bfd1','#85c7a6','#a8d8c9','#cfe8de'];
   for (let i = 0; i < count; i++) {
     const c = document.createElement('div');
     c.className = 'confetti';
