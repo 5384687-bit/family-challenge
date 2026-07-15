@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>התחרות של אסתי ואמא</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card2: #253449;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --gold: #fbbf24;
+    --blue: #38bdf8;
+    --pink: #f472b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px 12px 60px;
+  }
+  .container { max-width: 760px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 1.8rem; margin-bottom: 4px; }
+  .day-counter { text-align: center; color: var(--muted); font-size: 0.95rem; margin-bottom: 4px; }
+  .sync-status { text-align: center; font-size: 0.8rem; margin-bottom: 16px; min-height: 1.2em; }
+  .sync-status.ok { color: #4ade80; }
+  .sync-status.err { color: var(--gold); }
+  .sync-status.loading { color: var(--muted); }
+
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  button {
+    cursor: pointer; border: none; border-radius: 12px;
+    font-size: 1.05rem; font-family: inherit; font-weight: 600;
+    transition: transform 0.1s, filter 0.2s;
+  }
+  button:hover { filter: brightness(1.15); }
+  button:active { transform: scale(0.97); }
+  .btn-success { background: var(--green); color: #052e16; }
+  .btn-fail { background: var(--red); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid #334155; padding: 12px; width: 100%; margin-top: 4px; }
+
+  /* ---- score banner ---- */
+  .score-banner {
+    text-align: center; padding: 20px; border-radius: 16px; margin-bottom: 16px;
+    background: linear-gradient(90deg, rgba(251,191,36,0.18), rgba(251,191,36,0.06));
+    border: 1px solid rgba(251,191,36,0.45);
+  }
+  .score-banner .label { color: var(--muted); font-size: 1rem; }
+  .score-banner .points { font-size: 3.2rem; font-weight: 800; color: var(--gold); line-height: 1.15; }
+  .score-banner .points.negative { color: var(--red); }
+  .score-banner .streak { color: var(--gold); font-size: 0.95rem; min-height: 1.3em; }
+
+  /* ---- daily verdict ---- */
+  .verdict {
+    text-align: center; padding: 14px 16px; border-radius: 14px; margin-bottom: 16px;
+    font-size: 1.08rem; border: 1px solid #334155; background: rgba(148,163,184,0.07);
+  }
+  .verdict.plus { border-color: rgba(34,197,94,0.5); background: rgba(34,197,94,0.1); }
+  .verdict.minus { border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.1); }
+  .verdict .pts { font-weight: 800; }
+
+  /* ---- players ---- */
+  .players { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 520px) { .players { grid-template-columns: 1fr; } }
+  .player-card { text-align: center; border-top: 4px solid var(--pink); }
+  .player-card.mom { border-top-color: var(--blue); }
+  .player-name { font-size: 1.35rem; font-weight: 700; margin-bottom: 4px; }
+  .mini-stat { color: var(--muted); font-size: 0.85rem; margin-bottom: 14px; }
+  .today-status { margin-top: 6px; font-size: 1rem; min-height: 3em; }
+  .today-btns { display: flex; gap: 10px; justify-content: center; margin-top: 8px; }
+  .today-btns button { padding: 14px 20px; }
+  .reported { font-weight: 700; padding: 8px 0; }
+  .reported.ok { color: var(--green); }
+  .reported.no { color: var(--red); }
+  .change-link { background: none; border: none; color: var(--muted); font-size: 0.78rem; text-decoration: underline; margin-top: 4px; font-weight: 400; }
+
+  /* ---- rules ---- */
+  h2 { font-size: 1.1rem; margin-bottom: 12px; }
+  .rules-list { list-style: none; font-size: 0.95rem; }
+  .rules-list li { padding: 7px 0; border-bottom: 1px solid #27354d; display: flex; justify-content: space-between; gap: 10px; }
+  .rules-list li:last-child { border-bottom: none; }
+  .rules-list .pts-badge { font-weight: 800; white-space: nowrap; }
+  .pts-badge.plus { color: var(--green); }
+  .pts-badge.minus { color: var(--red); }
+  .pts-badge.zero { color: var(--muted); }
+
+  /* ---- history ---- */
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th { color: var(--muted); font-weight: 600; padding: 8px 6px; text-align: center; border-bottom: 1px solid #334155; }
+  th:first-child { text-align: right; }
+  td { padding: 9px 6px; text-align: center; border-bottom: 1px solid #27354d; }
+  td:first-child { text-align: right; color: var(--muted); white-space: nowrap; }
+  .mark-ok { color: var(--green); font-weight: 700; }
+  .mark-no { color: var(--red); font-weight: 700; }
+  .mark-none { color: #475569; }
+  .day-pts-plus { color: var(--green); font-weight: 700; }
+  .day-pts-minus { color: var(--red); font-weight: 700; }
+  .day-pts-zero { color: var(--muted); }
+
+  .confetti {
+    position: fixed; top: -12px; z-index: 60; pointer-events: none;
+    width: 10px; height: 14px; opacity: 0.9;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(105vh) rotate(720deg); opacity: 0.7; }
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🏆 התחרות של אסתי ואמא</h1>
+  <p class="day-counter" id="dayCounter"></p>
+  <p class="sync-status loading" id="syncStatus">☁️ מתחבר...</p>
+
+  <div class="score-banner">
+    <div class="label">הנקודות של אסתי</div>
+    <div class="points" id="totalPoints">0</div>
+    <div class="streak" id="estiStreak"></div>
+  </div>
+
+  <div class="verdict" id="verdict"></div>
+
+  <div class="players">
+    <div class="card player-card esti" id="cardEsti"></div>
+    <div class="card player-card mom" id="cardMom"></div>
+  </div>
+
+  <div class="card">
+    <h2>📜 חוקי התחרות</h2>
+    <ul class="rules-list">
+      <li><span>שתיכן הצלחתן</span><span class="pts-badge plus">אסתי מקבלת +1</span></li>
+      <li><span>אסתי הצליחה ואמא לא</span><span class="pts-badge plus">אסתי מקבלת +2</span></li>
+      <li><span>אמא הצליחה ואסתי לא</span><span class="pts-badge minus">אסתי מאבדת 1-</span></li>
+      <li><span>שתיכן לא הצלחתן</span><span class="pts-badge zero">בלי נקודות (0)</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>📅 היסטוריה</h2>
+    <table>
+      <thead>
+        <tr><th>תאריך</th><th>אסתי</th><th>אמא</th><th>נקודות</th></tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+
+  <button class="btn-ghost" onclick="resetAll()">איפוס והתחלה מחדש</button>
+
+</div>
+
+<script>
+/* ---------- cloud sync (shared between all devices) ---------- */
+const SYNC_URL = 'https://api.npoint.io/23855d287dc4f8583d53';
+const CACHE_KEY = 'esti-challenge-v3';
+const NAMES = { esti: 'אסתי', mom: 'אמא' };
+let state = null;
+let syncOK = null;        // null=loading, true=synced, false=offline
+let pendingPush = false;  // a local change is waiting to be uploaded
+let busy = false;         // an applyChange is in flight
+
+/* ---------- utils ---------- */
+function dateKey(d) {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function todayKey() { return dateKey(new Date()); }
+function yesterdayKey() { const d = new Date(); d.setDate(d.getDate()-1); return dateKey(d); }
+function fmtHe(key) {
+  const [y,m,d] = key.split('-').map(Number);
+  return new Date(y, m-1, d).toLocaleDateString('he-IL', { weekday:'short', day:'numeric', month:'numeric' });
+}
+function daysBetween(k1, k2) {
+  const [y1,m1,d1] = k1.split('-').map(Number), [y2,m2,d2] = k2.split('-').map(Number);
+  return Math.round((new Date(y2,m2-1,d2) - new Date(y1,m1-1,d1)) / 86400000);
+}
+function freshState() { return { startDate: todayKey(), records: {} }; } // records: { '2026-07-15': { esti: bool, mom: bool } }
+
+function cacheLocal() { try { localStorage.setItem(CACHE_KEY, JSON.stringify(state)); } catch(e) {} }
+function loadCache() { try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch(e) { return null; } }
+
+async function fetchRemote() {
+  const res = await fetch(SYNC_URL, { cache: 'no-store' });
+  if (res.status === 404) return null; // not initialized yet
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  return (data && data.records !== undefined) ? data : null;
+}
+async function pushRemote() {
+  const res = await fetch(SYNC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state)
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+}
+function setSync(ok) {
+  syncOK = ok;
+  const el = document.getElementById('syncStatus');
+  if (ok === null) { el.className = 'sync-status loading'; el.textContent = '☁️ מתחבר...'; }
+  else if (ok) { el.className = 'sync-status ok'; el.textContent = '☁️ מסונכרן בין כל המכשירים'; }
+  else { el.className = 'sync-status err'; el.textContent = '⚠️ אין חיבור לאינטרנט — הדיווח נשמר במכשיר ויסונכרן אוטומטית'; }
+}
+
+/* ---------- init ---------- */
+async function init() {
+  state = loadCache();
+  if (state) render(); // instant paint from local cache
+  try {
+    const remote = await fetchRemote();
+    if (remote) {
+      state = remote;
+    } else {
+      if (!state) state = freshState();
+      await pushRemote();
+    }
+    setSync(true);
+  } catch(e) {
+    if (!state) state = freshState();
+    setSync(false);
+  }
+  cacheLocal();
+  render();
+}
+
+/* ---------- apply a change: refetch, mutate, push ---------- */
+async function applyChange(mutate) {
+  if (busy) return;
+  busy = true;
+  try {
+    try {
+      const remote = await fetchRemote();
+      if (remote) state = remote; // include reports made on other devices
+    } catch(e) {}
+    mutate(state);
+    cacheLocal();
+    render();
+    try { await pushRemote(); pendingPush = false; setSync(true); }
+    catch(e) { pendingPush = true; setSync(false); }
+  } finally { busy = false; }
+}
+
+/* ---------- background refresh ---------- */
+async function refresh() {
+  if (busy) return;
+  try {
+    if (pendingPush) { await pushRemote(); pendingPush = false; setSync(true); return; }
+    const remote = await fetchRemote();
+    if (remote && JSON.stringify(remote) !== JSON.stringify(state)) {
+      state = remote; cacheLocal(); render();
+    }
+    setSync(true);
+  } catch(e) { setSync(false); }
+}
+setInterval(refresh, 120000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+
+/* ---------- scoring ---------- */
+function dayPoints(r) {
+  if (!r || r.esti === undefined || r.mom === undefined) return null; // day incomplete
+  if (r.esti && r.mom) return 1;    // both succeeded
+  if (r.esti && !r.mom) return 2;   // only Esti succeeded
+  if (!r.esti && r.mom) return -1;  // only Mom succeeded
+  return 0;                          // both failed
+}
+function totalPoints() {
+  let sum = 0;
+  for (const k in state.records) {
+    const p = dayPoints(state.records[k]);
+    if (p !== null) sum += p;
+  }
+  return sum;
+}
+function estiStreak() {
+  let streak = 0;
+  const d = new Date();
+  if (state.records[todayKey()]?.esti !== true) d.setDate(d.getDate()-1);
+  while (true) {
+    const k = dateKey(d);
+    if (k < state.startDate) break;
+    if (state.records[k]?.esti === true) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+function verdictText(pts) {
+  if (pts === 1)  return { cls: 'plus',  html: '🎉 שתיכן הצלחתן היום! אסתי מקבלת <span class="pts">נקודה אחת</span>' };
+  if (pts === 2)  return { cls: 'plus',  html: '🔥 אסתי הצליחה ואמא לא — אסתי מקבלת <span class="pts">2 נקודות!</span>' };
+  if (pts === -1) return { cls: 'minus', html: '😞 אמא הצליחה ואסתי לא — אסתי מאבדת <span class="pts">נקודה</span>. מחר יום חדש!' };
+  return { cls: '', html: '💪 שתיכן לא הצלחתן היום — בלי נקודות. מחר מתחילים מחדש!' };
+}
+
+/* ---------- reporting ---------- */
+function setResult(player, key, success) {
+  applyChange(s => {
+    if (!s.records[key]) s.records[key] = {};
+    const wasComplete = dayPoints(s.records[key]) !== null;
+    s.records[key][player] = success;
+    const pts = dayPoints(s.records[key]);
+    if (!wasComplete && pts !== null && pts > 0) launchConfetti(pts === 2 ? 120 : 60);
+  });
+}
+function clearResult(player, key) {
+  applyChange(s => {
+    if (s.records[key]) delete s.records[key][player];
+  });
+}
+
+/* ---------- render ---------- */
+function render() {
+  const dayNum = daysBetween(state.startDate, todayKey()) + 1;
+  document.getElementById('dayCounter').textContent = `יום ${dayNum} לתחרות`;
+
+  const total = totalPoints();
+  const totalEl = document.getElementById('totalPoints');
+  totalEl.textContent = total;
+  totalEl.classList.toggle('negative', total < 0);
+
+  const streak = estiStreak();
+  document.getElementById('estiStreak').textContent =
+    streak > 1 ? `🔥 אסתי ברצף של ${streak} ימי הצלחה` : (streak === 1 ? '🔥 יום הצלחה אחד ברצף' : '');
+
+  const verdictEl = document.getElementById('verdict');
+  const todayRec = state.records[todayKey()];
+  const pts = dayPoints(todayRec);
+  verdictEl.className = 'verdict';
+  if (pts === null) {
+    const waiting = [];
+    if (todayRec?.esti === undefined) waiting.push(NAMES.esti);
+    if (todayRec?.mom === undefined) waiting.push(NAMES.mom);
+    verdictEl.textContent = `⏳ מחכים לדיווח של ${waiting.join(' ושל ')} להיום`;
+  } else {
+    const v = verdictText(pts);
+    if (v.cls) verdictEl.classList.add(v.cls);
+    verdictEl.innerHTML = v.html;
+  }
+
+  renderPlayerCard('esti');
+  renderPlayerCard('mom');
+  renderHistory();
+}
+
+function renderPlayerCard(player) {
+  const card = document.getElementById(player === 'esti' ? 'cardEsti' : 'cardMom');
+  const tk = todayKey(), yk = yesterdayKey();
+  const todayVal = state.records[tk]?.[player];
+  const yestVal = state.records[yk]?.[player];
+
+  let successDays = 0;
+  for (const k in state.records) if (state.records[k][player] === true) successDays++;
+
+  let todaySection;
+  if (todayVal === true) {
+    todaySection = `<div class="reported ok">✅ הצלחת היום! כל הכבוד</div>
+      <button class="change-link" onclick="clearResult('${player}','${tk}')">שינוי דיווח</button>`;
+  } else if (todayVal === false) {
+    todaySection = `<div class="reported no">😞 לא הצלחת היום. מחר יום חדש!</div>
+      <button class="change-link" onclick="clearResult('${player}','${tk}')">שינוי דיווח</button>`;
+  } else {
+    todaySection = `<div>איך היה היום?</div>
+      <div class="today-btns">
+        <button class="btn-success" onclick="setResult('${player}','${tk}',true)">✅ הצלחתי</button>
+        <button class="btn-fail" onclick="setResult('${player}','${tk}',false)">❌ לא הצלחתי</button>
+      </div>`;
+  }
+
+  let yestSection = '';
+  if (yk >= state.startDate && yestVal === undefined) {
+    yestSection = `<div style="margin-top:12px; font-size:0.82rem; color:var(--muted);">שכחת לדווח אתמול?
+      <button class="change-link" onclick="setResult('${player}','${yk}',true)">✅ הצלחתי</button> /
+      <button class="change-link" onclick="setResult('${player}','${yk}',false)">❌ לא</button></div>`;
+  }
+
+  card.innerHTML = `
+    <div class="player-name">${NAMES[player]}</div>
+    <div class="mini-stat">ימי הצלחה עד כה: ${successDays}</div>
+    <div class="today-status">${todaySection}${yestSection}</div>
+  `;
+}
+
+function renderHistory() {
+  const body = document.getElementById('historyBody');
+  const rows = [];
+  const total = daysBetween(state.startDate, todayKey());
+  for (let i = total; i >= 0; i--) {
+    const [y,m,d] = state.startDate.split('-').map(Number);
+    const dt = new Date(y, m-1, d); dt.setDate(dt.getDate() + i);
+    const k = dateKey(dt);
+    const r = state.records[k] || {};
+    const mark = v => v === true ? '<span class="mark-ok">✓</span>' : v === false ? '<span class="mark-no">✗</span>' : '<span class="mark-none">—</span>';
+    const pts = dayPoints(r);
+    let ptsCell;
+    if (pts === null) ptsCell = '<span class="mark-none">—</span>';
+    else if (pts > 0) ptsCell = `<span class="day-pts-plus">+${pts}</span>`;
+    else if (pts < 0) ptsCell = `<span class="day-pts-minus">${pts}</span>`;
+    else ptsCell = '<span class="day-pts-zero">0</span>';
+    rows.push(`<tr><td>${fmtHe(k)}${k === todayKey() ? ' (היום)' : ''}</td><td>${mark(r.esti)}</td><td>${mark(r.mom)}</td><td>${ptsCell}</td></tr>`);
+  }
+  body.innerHTML = rows.join('');
+}
+
+/* ---------- confetti ---------- */
+function launchConfetti(count) {
+  const colors = ['#fbbf24','#38bdf8','#f472b6','#22c55e','#818cf8'];
+  for (let i = 0; i < count; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.insetInlineStart = Math.random()*100 + 'vw';
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration = (2 + Math.random()*2.5) + 's';
+    c.style.animationDelay = Math.random()*0.8 + 's';
+    c.style.transform = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 6000);
+  }
+}
+
+/* ---------- reset ---------- */
+function resetAll() {
+  if (!confirm('לאפס הכול ולהתחיל מחדש? כל הנקודות יימחקו בכל המכשירים.')) return;
+  applyChange(s => {
+    s.startDate = todayKey();
+    s.records = {};
+  });
+}
+
+init();
+</script>
+</body>
+</html>
