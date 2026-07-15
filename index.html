@@ -79,6 +79,19 @@
   @media (max-width: 520px) { .players { grid-template-columns: 1fr; } }
   .player-card { text-align: center; border-top: 4px solid var(--pink); }
   .player-card.mom { border-top-color: var(--blue); }
+  .avatar {
+    width: 78px; height: 78px; border-radius: 50%; object-fit: cover;
+    display: block; margin: 0 auto 10px; cursor: pointer;
+    border: 3px solid var(--pink);
+    box-shadow: 0 2px 8px rgba(58,92,82,0.18);
+  }
+  .player-card.mom .avatar { border-color: var(--blue); }
+  .avatar.placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--card2); border-style: dashed; border-color: #a9c4bc;
+    color: var(--muted); font-size: 1.25rem; line-height: 1;
+  }
+  .avatar.placeholder span { font-size: 0.62rem; margin-top: 4px; }
   .player-name { font-size: 1.35rem; font-weight: 700; margin-bottom: 4px; }
   .mini-stat { color: var(--muted); font-size: 0.85rem; margin-bottom: 14px; }
   .today-status { margin-top: 6px; font-size: 1rem; min-height: 3em; }
@@ -165,6 +178,8 @@
   </div>
 
   <button class="btn-ghost" onclick="resetAll()">איפוס והתחלה מחדש</button>
+
+  <input type="file" id="photoInput" accept="image/*" style="display:none">
 
 </div>
 
@@ -390,12 +405,51 @@ function renderPlayerCard(player) {
       <button class="change-link" onclick="setResult('${player}','${yk}',false)">❌ לא</button></div>`;
   }
 
+  const photo = state.photos?.[player];
+  const avatar = photo
+    ? `<img class="avatar" src="${photo}" onclick="pickPhoto('${player}')" title="לחיצה להחלפת התמונה" alt="${NAMES[player]}">`
+    : `<div class="avatar placeholder" onclick="pickPhoto('${player}')" title="הוספת תמונה">📷<span>הוספת תמונה</span></div>`;
+
   card.innerHTML = `
+    ${avatar}
     <div class="player-name">${NAMES[player]}</div>
     <div class="mini-stat">ימי הצלחה עד כה: ${successDays}</div>
     <div class="today-status">${todaySection}${yestSection}</div>
   `;
 }
+
+/* ---------- profile photos ---------- */
+let photoTarget = null;
+function pickPhoto(player) {
+  photoTarget = player;
+  const inp = document.getElementById('photoInput');
+  inp.value = '';
+  inp.click();
+}
+document.getElementById('photoInput').addEventListener('change', function() {
+  const file = this.files && this.files[0];
+  if (!file || !photoTarget) return;
+  const player = photoTarget;
+  const img = new Image();
+  img.onload = () => {
+    // crop to square and shrink so the photo stays small enough to sync
+    const size = 240;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const min = Math.min(img.width, img.height);
+    const sx = (img.width - min) / 2, sy = (img.height - min) / 2;
+    ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+    URL.revokeObjectURL(img.src);
+    applyChange(s => {
+      if (!s.photos) s.photos = {};
+      s.photos[player] = dataUrl;
+    });
+  };
+  img.onerror = () => { alert('לא הצלחנו לקרוא את התמונה, נסו תמונה אחרת'); };
+  img.src = URL.createObjectURL(file);
+});
 
 function renderHistory() {
   const body = document.getElementById('historyBody');
