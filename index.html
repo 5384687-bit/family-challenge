@@ -125,6 +125,34 @@
   .day-pts-minus { color: var(--red); font-weight: 700; }
   .day-pts-zero { color: var(--muted); }
 
+  /* ---- edit day modal ---- */
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: rgba(114,191,209,0.08); }
+  .edit-hint { font-size: 0.72rem; opacity: 0.45; margin-inline-start: 4px; }
+  .overlay {
+    position: fixed; inset: 0; background: rgba(47,62,60,0.45);
+    display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px;
+  }
+  .modal {
+    background: var(--card); border-radius: 18px; padding: 22px;
+    width: 100%; max-width: 420px; box-shadow: 0 10px 40px rgba(31,45,42,0.25);
+    border: 1px solid #dbe8e3;
+  }
+  .modal h3 { font-size: 1.15rem; margin-bottom: 16px; text-align: center; }
+  .edit-name { font-weight: 700; font-size: 1.05rem; margin: 14px 0 8px; }
+  .seg { display: flex; gap: 8px; }
+  .seg-btn {
+    flex: 1; padding: 10px 4px; font-size: 0.88rem; font-weight: 600;
+    background: var(--card2); color: var(--muted); border: 1.5px solid transparent; border-radius: 10px;
+  }
+  .seg-btn.sel.ok { background: rgba(108,171,141,0.18); color: #2c6b4e; border-color: var(--green); }
+  .seg-btn.sel.no { background: rgba(201,122,94,0.15); color: #a04f33; border-color: var(--red); }
+  .seg-btn.sel.none { background: rgba(122,139,136,0.15); color: var(--text); border-color: var(--muted); }
+  .edit-pts { text-align: center; color: var(--muted); font-size: 0.92rem; margin: 16px 0 6px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 12px; }
+  .modal-actions button { flex: 1; padding: 12px; }
+  .btn-save { background: var(--gold); color: #fff; }
+
   .confetti {
     position: fixed; top: -12px; z-index: 60; pointer-events: none;
     width: 10px; height: 14px; opacity: 0.9;
@@ -180,6 +208,19 @@
   <button class="btn-ghost" onclick="resetAll()">איפוס והתחלה מחדש</button>
 
   <input type="file" id="photoInput" accept="image/*" style="display:none">
+
+  <div id="editOverlay" class="overlay hidden" onclick="if(event.target===this)closeEdit()">
+    <div class="modal">
+      <h3 id="editTitle"></h3>
+      <div id="editRow_esti"></div>
+      <div id="editRow_mom"></div>
+      <div class="edit-pts" id="editPts"></div>
+      <div class="modal-actions">
+        <button class="btn-save" onclick="saveEdit()">💾 שמירה</button>
+        <button class="btn-ghost" style="margin-top:0" onclick="closeEdit()">ביטול</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -467,9 +508,56 @@ function renderHistory() {
     else if (pts > 0) ptsCell = `<span class="day-pts-plus">+${pts}</span>`;
     else if (pts < 0) ptsCell = `<span class="day-pts-minus">${pts}</span>`;
     else ptsCell = '<span class="day-pts-zero">0</span>';
-    rows.push(`<tr><td>${fmtHe(k)}${k === todayKey() ? ' (היום)' : ''}</td><td>${mark(r.esti)}</td><td>${mark(r.mom)}</td><td>${ptsCell}</td></tr>`);
+    rows.push(`<tr onclick="openEdit('${k}')" title="לחיצה לעריכת היום הזה"><td>${fmtHe(k)}${k === todayKey() ? ' (היום)' : ''}<span class="edit-hint">✏️</span></td><td>${mark(r.esti)}</td><td>${mark(r.mom)}</td><td>${ptsCell}</td></tr>`);
   }
   body.innerHTML = rows.join('');
+}
+
+/* ---------- edit any past day ---------- */
+let editKey = null, editVals = null;
+function openEdit(key) {
+  editKey = key;
+  const r = state.records[key] || {};
+  editVals = { esti: r.esti, mom: r.mom };
+  renderEditModal();
+  document.getElementById('editOverlay').classList.remove('hidden');
+}
+function setEditVal(player, val) {
+  editVals[player] = (val === 'none') ? undefined : (val === 'true');
+  renderEditModal();
+}
+function renderEditModal() {
+  document.getElementById('editTitle').textContent =
+    '✏️ עריכת דיווח — ' + fmtHe(editKey) + (editKey === todayKey() ? ' (היום)' : '');
+  ['esti','mom'].forEach(p => {
+    const v = editVals[p];
+    document.getElementById('editRow_' + p).innerHTML = `
+      <div class="edit-name">${NAMES[p]}</div>
+      <div class="seg">
+        <button class="seg-btn ok ${v === true ? 'sel' : ''}" onclick="setEditVal('${p}','true')">✅ הצלחה</button>
+        <button class="seg-btn no ${v === false ? 'sel' : ''}" onclick="setEditVal('${p}','false')">❌ לא</button>
+        <button class="seg-btn none ${v === undefined ? 'sel' : ''}" onclick="setEditVal('${p}','none')">ללא דיווח</button>
+      </div>`;
+  });
+  const pts = dayPoints({ esti: editVals.esti, mom: editVals.mom });
+  document.getElementById('editPts').textContent =
+    pts === null ? 'נקודות ליום זה: — (חסר דיווח)' : 'נקודות ליום זה: ' + (pts > 0 ? '+' + pts : pts);
+}
+function saveEdit() {
+  const key = editKey, vals = { ...editVals };
+  applyChange(s => {
+    if (!s.records[key]) s.records[key] = {};
+    ['esti','mom'].forEach(p => {
+      if (vals[p] === undefined) delete s.records[key][p];
+      else s.records[key][p] = vals[p];
+    });
+    if (Object.keys(s.records[key]).length === 0) delete s.records[key];
+  });
+  closeEdit();
+}
+function closeEdit() {
+  document.getElementById('editOverlay').classList.add('hidden');
+  editKey = null; editVals = null;
 }
 
 /* ---------- confetti ---------- */
