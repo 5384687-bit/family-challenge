@@ -176,6 +176,7 @@
   <div class="score-banner">
     <div class="label">הנקודות של אסתי</div>
     <div class="points" id="totalPoints">0</div>
+    <button class="change-link" onclick="openAdjust()" style="font-size:0.75rem;">✏️ תיקון ניקוד</button>
     <div class="streak" id="estiStreak"></div>
   </div>
 
@@ -209,6 +210,22 @@
   <button class="btn-ghost" onclick="resetAll()">איפוס והתחלה מחדש</button>
 
   <input type="file" id="photoInput" accept="image/*" style="display:none">
+
+  <div id="adjustOverlay" class="overlay hidden" onclick="if(event.target===this)closeAdjust()">
+    <div class="modal">
+      <h3>✏️ תיקון ניקוד</h3>
+      <p style="font-size:0.9rem; color:var(--muted); margin-bottom:12px;">אם נמחקו נתונים, הזיני את הסכום שצריך להוסיף או להפחית כדי לתקן את הניקוד הכולל.</p>
+      <div style="display:flex; align-items:center; gap:10px; justify-content:center;">
+        <label style="font-weight:600;">תיקון:</label>
+        <input type="number" id="adjustInput" style="width:100px; text-align:center; font-size:1.2rem; padding:8px; border-radius:10px; border:1.5px solid #cfdfda; background:var(--card2); color:var(--text);" />
+      </div>
+      <p style="font-size:0.8rem; color:var(--muted); margin-top:8px; text-align:center;">מספר חיובי מוסיף נקודות, שלילי מפחית</p>
+      <div class="modal-actions">
+        <button class="btn-save" onclick="saveAdjust()">💾 שמירה</button>
+        <button class="btn-ghost" style="margin-top:0" onclick="closeAdjust()">ביטול</button>
+      </div>
+    </div>
+  </div>
 
   <div id="editOverlay" class="overlay hidden" onclick="if(event.target===this)closeEdit()">
     <div class="modal">
@@ -263,6 +280,22 @@ async function fetchRemote() {
   return (data && data.records !== undefined) ? data : null;
 }
 async function pushRemote() {
+  // Safety: never push a state with fewer records than what's on the server
+  try {
+    const remote = await fetchRemote();
+    if (remote) {
+      const localCount = Object.keys(state.records).length;
+      const remoteCount = Object.keys(remote.records).length;
+      if (remoteCount > localCount + 1) {
+        // Remote has significantly more data — merge instead of overwrite
+        for (const k in remote.records) {
+          if (!state.records[k]) state.records[k] = remote.records[k];
+        }
+        if (!state.photos && remote.photos) state.photos = remote.photos;
+        if (remote.startDate < state.startDate) state.startDate = remote.startDate;
+      }
+    }
+  } catch(e) { /* if we can't verify, still push */ }
   const res = await fetch(SYNC_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -285,7 +318,23 @@ async function init() {
   try {
     const remote = await fetchRemote();
     if (remote) {
-      state = remote;
+      if (state) {
+        // Merge: keep whichever has more data per day, never lose records
+        for (const k in remote.records) {
+          if (!state.records[k]) state.records[k] = remote.records[k];
+          else {
+            // merge individual fields within the day
+            for (const p in remote.records[k]) {
+              if (state.records[k][p] === undefined) state.records[k][p] = remote.records[k][p];
+            }
+          }
+        }
+        if (!state.photos && remote.photos) state.photos = remote.photos;
+        if (remote.startDate < state.startDate) state.startDate = remote.startDate;
+        if (state.scoreAdjust === undefined && remote.scoreAdjust !== undefined) state.scoreAdjust = remote.scoreAdjust;
+      } else {
+        state = remote;
+      }
     } else {
       if (!state) state = freshState();
       await pushRemote();
@@ -340,7 +389,7 @@ function dayPoints(r) {
   return 0;                          // both failed
 }
 function totalPoints() {
-  let sum = 0;
+  let sum = state.scoreAdjust || 0;
   for (const k in state.records) {
     const p = dayPoints(state.records[k]);
     if (p !== null) sum += p;
@@ -575,6 +624,20 @@ function launchConfetti(count) {
     document.body.appendChild(c);
     setTimeout(() => c.remove(), 6000);
   }
+}
+
+/* ---------- score adjustment ---------- */
+function openAdjust() {
+  document.getElementById('adjustInput').value = state.scoreAdjust || 0;
+  document.getElementById('adjustOverlay').classList.remove('hidden');
+}
+function closeAdjust() {
+  document.getElementById('adjustOverlay').classList.add('hidden');
+}
+function saveAdjust() {
+  const val = parseInt(document.getElementById('adjustInput').value) || 0;
+  applyChange(s => { s.scoreAdjust = val; });
+  closeAdjust();
 }
 
 /* ---------- reset ---------- */
