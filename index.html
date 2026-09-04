@@ -546,9 +546,8 @@ function renderHistory() {
   const body = document.getElementById('historyBody');
   const rows = [];
   const total = daysBetween(state.startDate, todayKey());
-  for (let i = total; i >= 0; i--) {
-    const [y,m,d] = state.startDate.split('-').map(Number);
-    const dt = new Date(y, m-1, d); dt.setDate(dt.getDate() + i);
+  for (let i = 0; i < Math.min(total + 1, 10); i++) {
+    const dt = new Date(); dt.setDate(dt.getDate() - i);
     const k = dateKey(dt);
     const r = state.records[k] || {};
     const mark = v => v === true ? '<span class="mark-ok">✓</span>' : v === false ? '<span class="mark-no">✗</span>' : '<span class="mark-none">—</span>';
